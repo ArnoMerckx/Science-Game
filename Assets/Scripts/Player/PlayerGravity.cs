@@ -7,7 +7,8 @@ public class PlayerGravity : MonoBehaviour
     public InputActionAsset inputActions;
     private InputAction gravityAction;
 
-    public bool isGravityFlipped;
+    private PlayerStats playerStats;
+
     private void OnEnable()
     {
         inputActions.FindActionMap("Player").Enable();
@@ -19,7 +20,8 @@ public class PlayerGravity : MonoBehaviour
 
     private void Awake()
     {
-        isGravityFlipped = false;
+        playerStats = GetComponent<PlayerStatsManager>().playerStats;
+        playerStats.IsGravityFlipped = false;
         gravityAction = inputActions.FindAction("Gravity");
     }
 
@@ -33,8 +35,9 @@ public class PlayerGravity : MonoBehaviour
 
     private void ToggleGravity()
     {
-        isGravityFlipped = !isGravityFlipped;
-        Physics2D.gravity = isGravityFlipped ? new Vector2(0, -9.81f) : new Vector2(0, 9.81f);
+        playerStats.IsGravityFlipped = !playerStats.IsGravityFlipped;
+        Physics2D.gravity = playerStats.IsGravityFlipped ? new Vector2(0, 9.81f) : new Vector2(0, -9.81f);
+        gameObject.GetComponentInChildren<SpriteRenderer>().flipY = playerStats.IsGravityFlipped;
     }
 }
 
