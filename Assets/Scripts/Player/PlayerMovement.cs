@@ -7,6 +7,7 @@ public class PlayerMovement : MonoBehaviour
     public InputActionAsset inputActions;
     private InputAction moveAction;
     private InputAction jumpAction;
+    private InputAction downAction;
 
     [Header("Movement Parameters")]
     private Vector2 moveInput;
@@ -29,6 +30,7 @@ public class PlayerMovement : MonoBehaviour
         playerStats.IsGrounded = true;
         moveAction = InputSystem.actions.FindAction("Move");
         jumpAction = InputSystem.actions.FindAction("Jump");
+        downAction = InputSystem.actions.FindAction("Down");
         playerRb = GetComponent<Rigidbody2D>();
     }
 
@@ -40,6 +42,10 @@ public class PlayerMovement : MonoBehaviour
         if (jumpAction.WasPressedThisFrame())
         {
             Jump();
+        }
+        if ( downAction.WasPressedThisFrame())
+        {
+            PlatformCheck();
         }
     }
     void FixedUpdate()
@@ -96,6 +102,20 @@ public class PlayerMovement : MonoBehaviour
             {
                 playerStats.IsGrounded = true;
             }
+        }
+    }
+
+    private void PlatformCheck()
+    {
+        // Check if the player is on a platform
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, 2f, LayerMask.GetMask("Platform"));
+        if (hit.collider != null)
+        {
+            hit.transform.gameObject.GetComponent<Platform>().goingThroughPlatform = true;
+            StartCoroutine(hit.transform.gameObject.GetComponent<Platform>().PlatformCheckCooldown());
+            // If the player is on a platform, ignore the collision with it
+            Physics2D.IgnoreCollision(GetComponent<BoxCollider2D>(), hit.collider, true);
+            Physics2D.IgnoreCollision(GetComponent<CapsuleCollider2D>(), hit.collider, true);
         }
     }
 }
