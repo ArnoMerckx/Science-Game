@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -13,7 +14,11 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 moveInput;
     private Rigidbody2D playerRb;
 
-    private PlayerStats playerStats;
+
+    public PlayerStats playerStats;
+
+    private GameObject currentPlatform;
+
 
     private void OnEnable()
     {
@@ -28,6 +33,8 @@ public class PlayerMovement : MonoBehaviour
     {
         playerStats = GetComponent<PlayerStatsManager>().playerStats;
         playerStats.IsGrounded = true;
+        playerStats.IsGravityFlipped = false;
+        playerStats.Gravity = -9.81f; // Default gravity value
         moveAction = InputSystem.actions.FindAction("Move");
         jumpAction = InputSystem.actions.FindAction("Jump");
         downAction = InputSystem.actions.FindAction("Down");
@@ -45,7 +52,10 @@ public class PlayerMovement : MonoBehaviour
         }
         if ( downAction.WasPressedThisFrame())
         {
-            PlatformCheck();
+            if (currentPlatform != null)
+            {
+                StartCoroutine(DisableCollision());
+            }
         }
     }
     void FixedUpdate()
@@ -69,7 +79,7 @@ public class PlayerMovement : MonoBehaviour
     }
     public void Move()
     {
-        Vector2 movement = new Vector2(moveInput.x * playerStats.WalkSpeed, playerRb.linearVelocity.y);
+        Vector2 movement = new Vector2(moveInput.x * playerStats.WalkSpeed, playerRb.linearVelocity.y + playerStats.Gravity * Time.deltaTime);
         playerRb.linearVelocity = movement;
     }
 
@@ -90,7 +100,7 @@ public class PlayerMovement : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         // Check if collided object has Ground tag
-        if (collision.gameObject.CompareTag("Ground"))
+        if (collision.gameObject.CompareTag("Ground") || collision.gameObject.CompareTag("Platform"))
         {
             // Check if Ground is below the player when gravity is normal
             if (!playerStats.IsGravityFlipped && collision.contacts[0].point.y < transform.position.y)
@@ -103,19 +113,33 @@ public class PlayerMovement : MonoBehaviour
                 playerStats.IsGrounded = true;
             }
         }
+        if(collision.gameObject.CompareTag("Platform"))
+        {
+            currentPlatform = collision.gameObject;
+        }
     }
 
-    private void PlatformCheck()
+    private void OnCollisionExit2D(Collision2D collision)
     {
-        // Check if the player is on a platform
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, 2f, LayerMask.GetMask("Platform"));
-        if (hit.collider != null)
+        // Check if exited object has Ground tag
+        if (collision.gameObject.CompareTag("Platform"))
         {
-            hit.transform.gameObject.GetComponent<Platform>().goingThroughPlatform = true;
-            StartCoroutine(hit.transform.gameObject.GetComponent<Platform>().PlatformCheckCooldown());
-            // If the player is on a platform, ignore the collision with it
-            Physics2D.IgnoreCollision(GetComponent<BoxCollider2D>(), hit.collider, true);
-            Physics2D.IgnoreCollision(GetComponent<CapsuleCollider2D>(), hit.collider, true);
+            currentPlatform = null;
+        }
+    }
+
+    private IEnumerator DisableCollision()
+    {
+        Collider2D platformCollider = currentPlatform.GetComponent<Collider2D>();
+        Collider2D[] playerColliders = GetComponents<Collider2D>();
+        foreach (Collider2D playerCollider in playerColliders)
+        {
+            Physics2D.IgnoreCollision(playerCollider, platformCollider, true);
+        }
+        yield return new WaitForSeconds(1f);
+        foreach (Collider2D playerCollider in playerColliders)
+        {
+            Physics2D.IgnoreCollision(playerCollider, platformCollider, false);
         }
     }
 }

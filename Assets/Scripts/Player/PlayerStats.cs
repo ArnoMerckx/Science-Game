@@ -7,6 +7,7 @@ public class PlayerStats : ScriptableObject
     public float WalkSpeed = 5f;
     public float JumpForce = 5f;
     public bool IsGrounded = true;  
+    public float Gravity = -9.81f;
 
     [Header("Player Gravity")]
     public bool IsGravityFlipped = false;

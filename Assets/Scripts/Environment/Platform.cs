@@ -4,30 +4,33 @@ using UnityEngine;
 public class Platform : MonoBehaviour
 {
     private GameObject player;
-    public bool goingThroughPlatform;
+    private bool platformFlipped;
+
     void Awake()
     {
-        goingThroughPlatform = false;
         player = GameObject.Find("Player");
+        platformFlipped = false;
     }
     void Update()
     {
-        if (goingThroughPlatform) { return; }
-        if (player.transform.position.y < transform.position.y + 1)
+        
+        if (player.GetComponent<PlayerStatsManager>().playerStats.IsGravityFlipped)
         {
-            Physics2D.IgnoreCollision(player.GetComponent<BoxCollider2D>(), GetComponent<Collider2D>());
-            Physics2D.IgnoreCollision(player.GetComponent<CapsuleCollider2D>(), GetComponent<Collider2D>());
+            if (!platformFlipped)
+            {
+                GetComponent<PlatformEffector2D>().rotationalOffset = 180f;
+                platformFlipped = true;
+            }
+            
         }
         else
         {
-            Physics2D.IgnoreCollision(player.GetComponent<BoxCollider2D>(), GetComponent<Collider2D>(),false);
-            Physics2D.IgnoreCollision(player.GetComponent<CapsuleCollider2D>(), GetComponent<Collider2D>(), false);
+            if (platformFlipped)
+            {
+                GetComponent<PlatformEffector2D>().rotationalOffset = 0;
+                platformFlipped = false;
+            }
+            
         }
-    }
-
-    public IEnumerator PlatformCheckCooldown()
-    {
-        yield return new WaitForSeconds(0.5f);
-        goingThroughPlatform = false;
     }
 }

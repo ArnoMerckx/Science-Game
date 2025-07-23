@@ -36,7 +36,14 @@ public class PlayerGravity : MonoBehaviour
     private void ToggleGravity()
     {
         playerStats.IsGravityFlipped = !playerStats.IsGravityFlipped;
-        Physics2D.gravity = playerStats.IsGravityFlipped ? new Vector2(0, 9.81f) : new Vector2(0, -9.81f);
+        if (playerStats.IsGravityFlipped)
+        {
+            playerStats.Gravity = 9.81f; // Inverted gravity
+        }
+        else
+        {
+            playerStats.Gravity = -9.81f; // Normal gravity
+        }
         gameObject.GetComponentInChildren<SpriteRenderer>().flipY = playerStats.IsGravityFlipped;
     }
 }

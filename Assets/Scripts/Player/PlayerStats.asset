@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: PlayerStats
   m_EditorClassIdentifier: 
   WalkSpeed: 5
-  JumpForce: 9.5
-  IsGrounded: 0
-  IsGravityFlipped: 0
+  JumpForce: 10.5
+  IsGrounded: 1
+  Gravity: 9.81
+  IsGravityFlipped: 1
