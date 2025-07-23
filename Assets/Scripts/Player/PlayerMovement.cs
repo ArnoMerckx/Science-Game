@@ -9,6 +9,7 @@ public class PlayerMovement : MonoBehaviour
     private InputAction moveAction;
     private InputAction jumpAction;
     private InputAction downAction;
+    private InputAction enterDoorAction;
 
     [Header("Movement Parameters")]
     private Vector2 moveInput;
@@ -18,6 +19,7 @@ public class PlayerMovement : MonoBehaviour
     public PlayerStats playerStats;
 
     private GameObject currentPlatform;
+    public GameObject currentPortal;
 
 
     private void OnEnable()
@@ -38,6 +40,7 @@ public class PlayerMovement : MonoBehaviour
         moveAction = InputSystem.actions.FindAction("Move");
         jumpAction = InputSystem.actions.FindAction("Jump");
         downAction = InputSystem.actions.FindAction("Down");
+        enterDoorAction = InputSystem.actions.FindAction("Enter");
         playerRb = GetComponent<Rigidbody2D>();
     }
 
@@ -55,6 +58,13 @@ public class PlayerMovement : MonoBehaviour
             if (currentPlatform != null)
             {
                 StartCoroutine(DisableCollision());
+            }
+        }
+        if (enterDoorAction.WasPressedThisFrame())
+        {
+            if (currentPortal != null)
+            {
+                currentPortal.GetComponent<Portal>().TelePortToDestination();
             }
         }
     }
@@ -121,10 +131,25 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnCollisionExit2D(Collision2D collision)
     {
-        // Check if exited object has Ground tag
         if (collision.gameObject.CompareTag("Platform"))
         {
             currentPlatform = null;
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Portal"))
+        {
+            currentPortal = other.gameObject;
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.CompareTag("Portal") && other.gameObject == currentPortal)
+        {
+            currentPortal = null;
         }
     }
 
