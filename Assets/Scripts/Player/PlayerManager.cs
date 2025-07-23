@@ -1,8 +1,10 @@
+using NUnit.Framework;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerManager : MonoBehaviour
 {
     [Header("Input Actions")]
     public InputActionAsset inputActions;
@@ -10,6 +12,7 @@ public class PlayerMovement : MonoBehaviour
     private InputAction jumpAction;
     private InputAction downAction;
     private InputAction enterDoorAction;
+    private InputAction portalAction;
 
     [Header("Movement Parameters")]
     private Vector2 moveInput;
@@ -18,8 +21,11 @@ public class PlayerMovement : MonoBehaviour
 
     public PlayerStats playerStats;
 
+    [Header("Upgrade Parameters")]
+    private UpgradeHelper upgradeHelper;
     private GameObject currentPlatform;
     public GameObject currentPortal;
+    public List<GameObject> spawnedInPortals;
 
 
     private void OnEnable()
@@ -33,15 +39,29 @@ public class PlayerMovement : MonoBehaviour
 
     void Awake()
     {
+        //Get Components
         playerStats = GetComponent<PlayerStatsManager>().playerStats;
+        playerRb = GetComponent<Rigidbody2D>();
+        upgradeHelper = GameObject.Find("UpgradeHelper").GetComponent<UpgradeHelper>();
+
+        //Reset Parameters
         playerStats.IsGrounded = true;
         playerStats.IsGravityFlipped = false;
         playerStats.Gravity = -9.81f; // Default gravity value
+        spawnedInPortals = new List<GameObject>();
+
+        //Setup Input
+        SetupInputActions();
+        
+    }
+
+    private void SetupInputActions()
+    {
         moveAction = InputSystem.actions.FindAction("Move");
         jumpAction = InputSystem.actions.FindAction("Jump");
         downAction = InputSystem.actions.FindAction("Down");
         enterDoorAction = InputSystem.actions.FindAction("Enter");
-        playerRb = GetComponent<Rigidbody2D>();
+        portalAction = InputSystem.actions.FindAction("Portal");
     }
 
     // Update is called once per frame
@@ -66,6 +86,10 @@ public class PlayerMovement : MonoBehaviour
             {
                 currentPortal.GetComponent<Portal>().TelePortToDestination();
             }
+        }
+        if (portalAction.WasPressedThisFrame())
+        {
+            HandlePortalSpawn();
         }
     }
     void FixedUpdate()
@@ -105,6 +129,72 @@ public class PlayerMovement : MonoBehaviour
             spriteRenderer.flipX = true; // Facing left
         }
 
+    }
+
+    private void HandlePortalSpawn()
+    {
+        if (currentPortal != null)
+        {
+            
+            int index = spawnedInPortals.IndexOf(currentPortal);
+            Destroy(spawnedInPortals[index]);
+            spawnedInPortals.RemoveAt(index);
+            currentPortal = null;
+        }
+        else
+        {
+            if (spawnedInPortals.Count == 0)
+            {
+                GameObject newPortal = Instantiate(upgradeHelper.portals[0], transform.position, Quaternion.identity);
+                newPortal.GetComponent<Portal>().portalColor = PortalColor.Blue;
+                spawnedInPortals.Add(newPortal);
+            }
+            else if (spawnedInPortals.Count == 1)
+            {
+                if (spawnedInPortals[0].GetComponent<Portal>().portalColor == PortalColor.Blue)
+                {
+                    GameObject newPortal = Instantiate(upgradeHelper.portals[1], transform.position, Quaternion.identity);
+                    newPortal.GetComponent<Portal>().portalColor = PortalColor.Orange;
+                    spawnedInPortals.Add(newPortal);
+                }
+                else
+                {
+                    GameObject newPortal = Instantiate(upgradeHelper.portals[0], transform.position, Quaternion.identity);
+                    newPortal.GetComponent<Portal>().portalColor = PortalColor.Blue;
+                    spawnedInPortals.Add(newPortal);
+                }
+                foreach (var portal in spawnedInPortals)
+                {
+                    portal.GetComponent<Portal>().ResetDestinationPortal();
+                }
+            }
+            else
+            {
+                if (spawnedInPortals[1].GetComponent<Portal>().portalColor == PortalColor.Blue)
+                {
+                    GameObject newPortal = Instantiate(upgradeHelper.portals[1], transform.position, Quaternion.identity);
+                    newPortal.GetComponent<Portal>().portalColor = PortalColor.Orange;
+                    spawnedInPortals.Add(newPortal);
+                }
+                else
+                {
+                    GameObject newPortal = Instantiate(upgradeHelper.portals[0], transform.position, Quaternion.identity);
+                    newPortal.GetComponent<Portal>().portalColor = PortalColor.Blue;
+                    spawnedInPortals.Add(newPortal);
+                }
+
+            }
+            if (spawnedInPortals.Count > 2)
+            {
+                Destroy(spawnedInPortals[0]);
+                spawnedInPortals.RemoveAt(0);
+            }
+            foreach (var portal in spawnedInPortals)
+            {
+                portal.GetComponent<Portal>().ResetDestinationPortal();
+            }
+        }
+        
     }
 
     private void OnCollisionEnter2D(Collision2D collision)

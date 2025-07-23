@@ -3,16 +3,10 @@ using UnityEngine;
 public class Portal : MonoBehaviour
 {
     public GameObject destinationPortal;
+    public PortalColor portalColor;
     void Awake()
     {
-        GameObject[] portals = GameObject.FindGameObjectsWithTag("Portal");
-        foreach (GameObject p in portals) 
-        {
-            if (p.name != gameObject.name)
-            {
-                destinationPortal = p;
-            }
-        }
+        FindOtherPortal();
     }
 
     public void TelePortToDestination()
@@ -21,8 +15,32 @@ public class Portal : MonoBehaviour
         {
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             player.transform.position = destinationPortal.transform.position;
-            player.GetComponent<PlayerMovement>().currentPortal = destinationPortal;
+            player.GetComponent<PlayerManager>().currentPortal = destinationPortal;
 
         }
     }
+
+    public void ResetDestinationPortal()
+    {
+        FindOtherPortal();
+    }
+
+    private void FindOtherPortal()
+    {
+        GameObject[] portals = GameObject.FindGameObjectsWithTag("Portal");
+        foreach (GameObject p in portals)
+        {
+            if (p.name != gameObject.name)
+            {
+                destinationPortal = p;
+                break;
+            }
+        }
+    }
+}
+
+public enum PortalColor
+{
+    Blue,
+    Orange
 }
